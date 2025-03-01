@@ -95,12 +95,9 @@ L_Dcruise = ((q_cruise*C_D0/W0_S) + W0_S/(q_cruise*pi*e0*AR))^-1; % 6.13
 
 wf_cruiseOutFraction = exp((-R_cruiseOut*C)/(V_cruise*L_Dcruise)); % 6.11
 
-% --- Segment 3: Loiter (4 hours at 35,000 ft) ---
-%   Breguet endurance: Wi/Wf = exp( (E * SFC) / (L/D) )
-%   => wf_loiter = Wf/Wi
-%
-Wi_loiter = 1;
-wf_loiter = exp( -(t_loiter * C_T) / (LoverD_loiter));
+% --- Segment 4: Loiter (4 hours at 35,000 ft) ---
+
+wf_loiterFraction = exp((-t_loiter_sec*C)/(L_Dmax));
 
 % --- Segment 4: Dash to target (100 nm, max speed) ---
 %   Possibly use a fraction from historical data or Breguet with new speed & L/D
