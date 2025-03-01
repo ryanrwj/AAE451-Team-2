@@ -15,16 +15,21 @@ a_cruise = 661;         % Knots
 rho_cruise = 0.0019;    % slug/ft^3, at cruise
 
 % === Sizing Variables ===
-W0_S = 1;           % lb/ft^2, wing loading
-T_W0 = 1;           % thrust to weight ratio
-AR = 1;             % wing aspect ratio
-M_max = 1;          % maximum Mach number
-M_cruise = 1;       % cruise Mach number
-C = 1;              % 1/s, specific fuel consumption
-h_cruise = 1;       % ft, cruise altitude
-e0 = 1;             % Oswald efficiency factor
-L_Dmax = 1;         % maximum lift-to-drag ratio
-phi_dot = 1;        % rad/s, turn rate
+W0_guess = 37500;                   % lb, initial guess for GTOW
+wing_area = 300;
+W0_S = W0_guess / wing_area;           % lb/ft^2, wing loading
+T_W0 = 1.095;           % thrust to weight ratio
+AR = 3.2;             % wing aspect ratio
+M_max = 2;          % maximum Mach number
+M_cruise = 0.9;       % cruise Mach number
+C_cruise = 0.8;              % 1/s, specific fuel consumption cruise
+C_loiter = 0.35;
+h_cruise = 35000;       % ft, cruise altitude
+e0 = 0.8;             % Oswald efficiency factor
+L_Dmax = 12;         % maximum lift-to-drag ratio
+L_Dcruise = 0.0866*L_Dmax;
+L_dloiter = L_Dmax;
+phi_dot = 18 * pi / 180;        % rad/s, turn rate
 n_missiles = 4;     % number of missiles
 C_D0 = 1;           % zero-lift drag coefficient
 
