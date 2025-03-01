@@ -74,11 +74,9 @@ t_reserve_sec  = t_reserve * 3600;
 %
 % You need a speed for cruise, a speed for loiter, or you incorporate them in SFC.
 
-% For demonstration, let’s define some typical speeds:
+% Calculation for Velocity:
 V_cruise = M_cruise*a_cruise;
-
-V_cruise  = 450; % knots (placeholder)
-V_loiter  = 300; % knots (placeholder)
+V_loiter  = 0.7 * V_cruise; % knots 
 
 % Convert knots to nm/hr if needed
 % 1 knot = 1 nm/hr, so V_cruise in nm/hr = 450 nm/hr (conveniently the same).
