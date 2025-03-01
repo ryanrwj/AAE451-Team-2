@@ -11,6 +11,8 @@ g = 32.174;             % ft/s^2, gravitational acceleration
 rho_sl = 0.0023769;     % slug/ft^3, sea-level air density
 gamma_air = 1.4;        % specific heat ratio of air
 R_air = 1717;           % ft-lb/slug-R, gas constant of air
+a_cruise = 661;         % Knots
+rho_cruise = 0.0019;    % slug/ft^3, at cruise
 
 % === Sizing Variables ===
 W0_S = 1;           % lb/ft^2, wing loading
