@@ -2,7 +2,7 @@
 %  Author: Team 2
 %  Date:   2/27/25
 
-clear; clc; close all;
+clear; clc; close all
 
 %% 1) Define Known/Assumed Inputs
 
@@ -10,27 +10,27 @@ clear; clc; close all;
 g = 32.174;             % ft/s^2, gravitational acceleration
 rho_sl = 0.0023769;     % slug/ft^3, sea-level air density
 rho_cruise = 0.0019;    % slug/ft^3, cruise air density
-a_cruise = 661;         % kn, cruise speed of sound
+a_cruise = 576;         % kn, cruise speed of sound
 gamma_air = 1.4;        % specific heat ratio of air
 R_air = 1717;           % ft-lb/slug-R, gas constant of air
 
 % === Sizing Variables ===
 W0_S = 92;           % lb/ft^2, wing loading
-W0_guess = 37500;                   % lb, initial guess for GTOW
+W0 = 15500;                   % lb, initial guess for GTOW
 wing_area = 300;
-T_W0 = 1.095;           % thrust to weight ratio
+T_W0 = 1;           % thrust to weight ratio
 AR = 3.2;             % wing aspect ratio
 M_max = 2;          % maximum Mach number
 M_cruise = 0.9;       % cruise Mach number
 C_cruise = 0.8;              % 1/h, cruise specific fuel consumption
-C_loiter = 0.7;
-C_dash = 1.4;
+C_loiter = 0.6;
+C_dash = 1.2;
 h_cruise = 35000;       % ft, cruise altitude
 e0 = 0.8;             % Oswald efficiency factor
-L_Dmax = 12;         % maximum lift-to-drag ratio
+L_Dmax = 14;         % maximum lift-to-drag ratio
 phi_dot = 18 * pi / 180;        % rad/s, turn rate
 n_missiles = 4;             % number of missiles
-C_D0 = 0.0016;          % zero-lift drag coefficient
+C_D0 = 0.016;          % zero-lift drag coefficient
 
 % === Mission Requirements ===
 
@@ -44,29 +44,15 @@ R_cruiseBack= 400;  % nm, return to base
 t_reserve   = 0.5;  % hours, reserve loiter
 
 % === Initial Guess or Known Values ===
-% You might guess an initial gross weight or base empty weight from F-15
 
 W_missile = 356;                    % lb, AIM-120 weight
 W_payload = n_missiles*W_missile;   % lb, total weapons
-
-% For advanced sizing, you can iterate, but we'll do a single pass here.
-
-%% 2) Convert Unit Systems Where Needed
-% For instance, Breguet uses consistent units (SI or Imperial).
-% Let’s assume you’re working in Imperial units (lb, nm, lb/hr for SFC).
-% Adjust as needed.
-
-% Convert distances from nm to miles if you want, or keep them in nm.
-% For Breguet in Imperial, you might keep nm if you do the correct SFC and g.
-% This example is simplified, so we will keep nm.
-
 
 %% 3) Velocity calculations
 
 % Calculation for Velocity:
 V_cruise = M_cruise*a_cruise;
 V_max = M_max*a_cruise;
-V_loiter  = 0.7 * V_cruise; % knots 
 
 %% 4) Weight Fractions for Each Mission Segment
 
@@ -74,7 +60,8 @@ V_loiter  = 0.7 * V_cruise; % knots
 wf_takeoffFraction = 0.98; % Raymer 6.8
 
 % --- Segment 2: Climb ---
-wf_climbFraction = 1.0065 - 0.0325*M_cruise; % 6.9
+%wf_climbFraction = 1.0065 - 0.0325*M_cruise; % 6.9
+wf_climbFraction = 0.9850;
 
 % --- Segment 3: Cruise Out (300 nm) ---
 q_cruise = 0.5*rho_cruise*V_cruise^2;   % dynamic pressure at cruise CHECK UNITS
@@ -107,8 +94,6 @@ wf_reserveFraction = exp((-t_reserve*C_loiter)/(L_Dmax));
 
 %% 5) Estimate Gross Weight Based on an Empty Weight Fraction or Iteration
 
-W0 = W0_guess;
-
 % polynomial parameters
 a = -0.02;
 b = 2.16;
@@ -118,23 +103,33 @@ c3 = 0.04;
 c4 = -0.10;
 c5 = 0.08;
 
-    We_fraction = a + b*W0^c1*AR^c2*T_W0^c3*W0_S^c4;
-    Wf_total = wf_takeoffFraction ...
+Wf_total = 1 - (wf_takeoffFraction ...
          * wf_climbFraction ...
          * wf_cruiseOutFraction ...
          * wf_loiterFraction ...
          * wf_dashFraction ...
          * wf_combatFraction ...
          * wf_cruiseBackFraction ...
-         * wf_reserveFraction;
+         * wf_reserveFraction);
+
+Wf_total = 0.27;
+
+n = 100;
+W0vec = zeros(1, n);
+for i = 1:n
+    We_fraction = a + b*W0^c1*AR^c2*T_W0^c3*W0_S^c4*M_max^c5;
     W0 = W_payload/(1 - Wf_total - We_fraction);
+    W0vec(i) = W0;
+end
 
 %% 6) Display results
 
-fuel_fraction = 1 - Wf_total;
+i = 1:n;
+plot(i, W0vec); grid
+
 disp('---------------------');
 disp('Preliminary Sizing Results:');
-disp(['Total Fuel Fraction Required = ', num2str(fuel_fraction)]);
+disp(['Total Fuel Fraction Required = ', num2str(Wf_total)]);
 disp(['Estimated Gross Takeoff Weight (W0) = ', num2str(W0), ' lb']);
 
 % Now you can compute actual empty weight:
@@ -142,7 +137,7 @@ We = We_fraction * W0;
 disp(['Estimated Empty Weight (We) = ', num2str(We), ' lb']);
 
 % Fuel weight:
-Wf = fuel_fraction * W0;
+Wf = Wf_total * W0;
 disp(['Estimated Fuel Weight (Wf) = ', num2str(Wf), ' lb']);
 
 disp('---------------------');
