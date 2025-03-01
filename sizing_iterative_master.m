@@ -42,7 +42,7 @@ t_reserve   = 0.5;  % hours, reserve loiter
 
 W_missile = 356;                    % lb, AIM-120 weight
 W_payload = n_missiles*W_missile;   % lb, total weapons
-W0_guess = 27853;                   % lb, initial guess for GTOW
+W0_guess = 37500;                   % lb, initial guess for GTOW
 
 % For advanced sizing, you can iterate, but we'll do a single pass here.
 
