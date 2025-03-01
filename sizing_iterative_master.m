@@ -15,6 +15,7 @@ a_cruise = 661;         % Knots
 rho_cruise = 0.0019;    % slug/ft^3, at cruise
 
 % === Sizing Variables ===
+<<<<<<< Updated upstream
 W0_guess = 37500;                   % lb, initial guess for GTOW
 wing_area = 300;
 W0_S = W0_guess / wing_area;           % lb/ft^2, wing loading
@@ -30,6 +31,19 @@ L_Dmax = 12;         % maximum lift-to-drag ratio
 L_Dcruise = 0.0866*L_Dmax;
 L_dloiter = L_Dmax;
 phi_dot = 18 * pi / 180;        % rad/s, turn rate
+=======
+W0_S = 1;           % lb/ft^2, wing loading
+T_W0 = 1;           % thrust to weight ratio
+AR = 1;             % wing aspect ratio
+M_max = 1;          % maximum Mach number
+V_max = 800;        % kn, maximum speed
+M_cruise = 1;       % cruise Mach number
+C = 1;              % 1/s, specific fuel consumption
+h_cruise = 1;       % ft, cruise altitude
+e0 = 1;             % Oswald efficiency factor
+L_Dmax = 1;         % maximum lift-to-drag ratio
+phi_dot = 1;        % rad/s, turn rate
+>>>>>>> Stashed changes
 n_missiles = 4;     % number of missiles
 C_D0 = 1;           % zero-lift drag coefficient
 
@@ -40,7 +54,7 @@ h_mission = 35000;  % ft, mission altitude
 R_cruiseOut = 300;  % nm, at optimum speed/altitude
 t_loiter    = 4.0;  % hours, air patrol at 35,000 ft
 R_dash      = 100;  % nm, maximum speed dash
-x_combat    = 2;    % number of combat turns
+n_turns    = 2;    % number of combat turns
 R_cruiseBack= 400;  % nm, return to base
 t_reserve   = 0.5;  % hours, reserve loiter
 
@@ -104,21 +118,24 @@ wf_cruiseOutFraction = exp((-R_cruiseOut*C)/(V_cruise*L_Dcruise)); % 6.11
 
 wf_loiterFraction = exp((-t_loiter_sec*C)/(L_Dmax));
 
-% --- Segment 4: Dash to target (100 nm, max speed) ---
+% --- Segment 5: Dash to target (100 nm, max speed) ---
 %   Possibly use a fraction from historical data or Breguet with new speed & L/D
 %   We have wf_dashFraction = 0.95 from historical data. 
+t_dash = R_dash/V_max;
+wf_dashFraction = 1 - C*T_W0*t_dash; % 6.16
 
-% --- Segment 5: Combat (2 x 360 turns, missile shots, etc.) ---
+% --- Segment 6: Combat (2 x 360 turns, missile shots, etc.) ---
 %   Could be a small fraction, e.g., 0.97 leftover (wf_combatFraction).
+t_combat = 2*pi*n_turns/phi_dot; % 6.17
+wf_combatFraction = 1 - C*T_W0*t_combat; % 6.16
 
-% --- Segment 6: Cruise Back (400 nm) ---
-%   Use Breguet again
-Wi_cruiseBack = 1;
-wf_cruiseBack = exp( -(R_cruiseBack * C_T) / (V_cruise * LoverD_cruise) );
+% --- Segment 7: Cruise Back (400 nm) ---
+
+wf_cruiseBackFraction = exp((-R_cruiseBack*C)/(V_cruise*L_Dcruise)); % 6.11
 
 % --- Segment 7: Reserve / Loiter (0.5 hr) ---
-Wi_reserve = 1;
-wf_reserve = exp( -(t_reserve * C_T) / (LoverD_loiter) );
+
+wf_reserveFraction = exp((-t_reserve_sec*C)/(L_Dmax));
 
 %% 5) Combine Segment-by-Segment Weight Fractions
 % Start with W0, multiply all fractions for each segment to get final weight.
@@ -127,55 +144,28 @@ wf_reserve = exp( -(t_reserve * C_T) / (LoverD_loiter) );
 % (Take-off & Climb) -> (Cruise Out) -> (Loiter) -> (Dash) -> (Combat)
 % -> (Cruise Back) -> (Reserve)
 
-wf_takeoff_climb = wf_climbFraction;
-
 % Multiply them in sequence:
 % Wfinal / W0 = wf_total = wf_takeoff_climb * wf_cruiseOut * wf_loiter 
 %                            * wf_dashFraction * wf_combatFraction 
 %                            * wf_cruiseBack * wf_reserve
 
-wf_total = wf_takeoff_climb ...
-         * wf_cruiseOut ...
-         * wf_loiter ...
+wf_total = wf_takeoffFraction ...
+         * wf_climbFraction ...
+         * wf_cruiseOutFraction ...
+         * wf_loiterFraction ...
          * wf_dashFraction ...
          * wf_combatFraction ...
-         * wf_cruiseBack ...
-         * wf_reserve;
+         * wf_cruiseBackFraction ...
+         * wf_reserveFraction;
 
 % Then, the total fuel fraction needed is:
 % Wf / W0 = 1 - wf_total
 fuel_fraction_required = 1 - wf_total;
 
 %% 6) Estimate Gross Weight Based on an Empty Weight Fraction or Iteration
-% A common approach:
-%   W0 = W_empty + W_crew + W_payload + W_fuel
-%   Let We = (some fraction)*W0 from historical data, or use a regression eqn.
-%   Then W_fuel = fuel_fraction_required * W0
-%
-% So W0 = We + W_crew + W_payload + (fuel_fraction_required)*W0
-% => W0 - (fuel_fraction_required)*W0 = We + W_crew + W_payload
-% => W0 * (1 - fuel_fraction_required) = We + W_crew + W_payload
-% => W0 = (We + W_crew + W_payload) / (1 - fuel_fraction_required)
-%
-% If you know We ~ k*W0, you have an implicit equation that can be solved
-% by iteration or using an initial guess. For a first pass, we might 
-% approximate We from the F-15 as ~ 0.55 * W0. 
-% Then solve iteratively.
 
-% For demonstration, let's do a single iteration approach.
-
-% Step 1: guess We fraction from F-15 data (~0.55)
-We_fraction_guess = 0.55;
-% Step 2: solve for W0 from the formula above
-%   W0 = (We + W_crew + W_payload) / (1 - fuel_fraction_required)
-% but We = We_fraction_guess * W0, so
-%   W0 = (We_fraction_guess*W0 + W_crew + W_payload) / (1 - fuel_fraction_required)
-
-% Rearrange:
-%   W0 - We_fraction_guess*W0/(1 - fuel_fraction_required) = (W_crew + W_payload)/(1 - fuel_fraction_required)
-%   W0 * [1 - We_fraction_guess/(1 - fuel_fraction_required)] = (W_crew + W_payload)/(1 - fuel_fraction_required)
-%   W0 = [ (W_crew + W_payload)/(1 - fuel_fraction_required ) ] ...
-%         / [ 1 - We_fraction_guess/(1 - fuel_fraction_required) ]
+W0 = W0_guess;
+We_fraction = a + b*W0^c1*AR^c2*T_W0^c3*W0_S^c4*M_max^c5; 
 
 num = (W_crew + W_payload) / (1 - fuel_fraction_required);
 den = 1 - We_fraction_guess/(1 - fuel_fraction_required);
