@@ -87,7 +87,7 @@ V_loiter  = 300; % knots (placeholder)
 wf_takeoffFraction = 0.98; % Raymer 6.8
 
 % --- Segment 2: Climb ---
-wf_climbFraction = 1.0065 - 0.325*M_cruise; % 6.9
+wf_climbFraction = 1.0065 - 0.0325*M_cruise; % 6.9
 
 % --- Segment 3: Cruise Out (300 nm) ---
 q_cruise = 0.5*rho_cruise*V_cruise^2;   % dynamic pressure at cruise CHECK UNITS
