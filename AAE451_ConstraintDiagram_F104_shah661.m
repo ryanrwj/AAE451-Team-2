@@ -3,22 +3,18 @@ g = 32.174; % Gravity in ft/s^2
 rho = 0.0023769; % Air density at sea level in slugs/ft^3
 
 %% Aircraft Specifications
-W_empty = 13865; % Empty weight in lbs
-W_max = 29027; % Maximum takeoff weight in lbs
-T_max = 15800; % Maximum thrust with afterburner in lbs
-S = 196.1; % Wing area in ft^2
 AR = 2.45; % Aspect ratio
 Cl_max = 1.12; % Maximum lift coefficient with high-lift devices
-Cd0 = 0.0172; % Zero-lift drag coefficient
+Cd0 = 0.01; % Zero-lift drag coefficient
 e = 0.8; % Oswald efficiency factor
 
 %% Derived Parameters
-W_S = linspace(30, 100, 500); % Wing loading range in lbs/ft^2
+W_S = linspace(0, 100, 500); % Wing loading range in lbs/ft^2
 q = 0.5 * rho * (1.467 * 250)^2; % Dynamic pressure at 250 knots (ft/s)
 
 %% Thrust-to-Weight Ratio Calculations
 % Takeoff Constraint
-Sg = 8000; % Takeoff ground roll in ft
+Sg = 2000; % Takeoff ground roll in ft
 mu = 0.04; % Rolling friction coefficient
 T_W_takeoff = (1.21 / (g * rho * Cl_max * Sg)) * W_S + (0.605 / Cl_max) * (Cd0 - mu * Cl_max) + mu;
 
@@ -26,44 +22,66 @@ T_W_takeoff = (1.21 / (g * rho * Cl_max * Sg)) * W_S + (0.605 / Cl_max) * (Cd0 -
 V_v = 79.016 + 1.2722*(W_S); % Rate of climb in KCAS
 V_inf = 399.843; % Climb speed in KCAS
 q_climb = 0.5 * rho * V_inf^2;
+cd_min = 0.02;
 k = 1 / (pi * e * AR);
-T_W_climb = (V_v / V_inf) + (q_climb ./ W_S) .* (Cd0 + k * (W_S ./ q_climb).^2);
+T_W_climb = (V_v / V_inf) + (q_climb ./ W_S) * cd_min + (k/q_climb)*(W_S);
 
 % Cruise Constraint
 V_cruise = 660; % Cruise speed in ft/s (approximately Mach 0.85)
+rho = 7.382e-4;% Density of Air at 35k feet
 q_cruise = 0.5 * rho * V_cruise^2;
-T_W_cruise = (q_cruise ./ W_S) .* Cd0;
+n = 1;
+T_W_cruise = q_cruise * (cd_min ./ (W_S) + k*(n/q_cruise)^2 * (W_S));
 
-% Sustained Turn at Mach 0.8 Constraint
-n_08M = 5; % Load factor for sustained turn at M=0.8
-V_08M = 880; % Speed in ft/s (approximately Mach 0.8)
-q_08M = 0.5 * rho * V_08M^2;
-T_W_turn_08M = (q_08M ./ W_S) .* (Cd0 + k * (n_08M^2 * (W_S ./ q_08M).^2));
+% Sustained Turn at Mach 0.9 Constraint
+n_09M = 4; % Load factor for sustained turn at M=0.8
+V_09M = 875.7; % Speed in ft/s (approximately Mach 0.8)
+rho = 7.382e-4;% Density of Air at 35k feet
+q_09M = 0.5 * rho * V_09M^2;
+alpha = 0.31; % Ratio of Air Densities
+T_W_turn_09M = (q_09M / alpha) .* ((cd_min ./ W_S) + k * ((n_09M*0.757 / q_09M).^2).*W_S);
 
 % Sustained Turn at Mach 1.2 Constraint
-n_12M = 4; % Load factor for sustained turn at M=1.2
-V_12M = 1320; % Speed in ft/s (approximately Mach 1.2)
+n_12M = 3; % Load factor for sustained turn at M=1.2
+V_12M = 1167; % Speed in ft/s (approximately Mach 1.2)
+rho = 7.382e-4;% Density of Air at 35k feet
+k = 1/(pi * 0.4 * AR);
 q_12M = 0.5 * rho * V_12M^2;
-T_W_turn_12M = (q_12M ./ W_S) .* (Cd0 + k * (n_12M^2 * (W_S ./ q_12M).^2));
+T_W_turn_12M = (q_12M / alpha) .* ((cd_min ./ W_S) + k * ((n_12M*0.757 / q_12M).^2).*W_S);
 
-% Mach 1.4 Dash Constraint
-V_14M = 1540; % Speed in ft/s (approximately Mach 1.4)
-q_14M = 0.5 * rho * V_14M^2;
-T_W_dash_14M = (q_14M ./ W_S) .* Cd0;
+% Mach 1.6 Dash Constraint
+n = 2; 
+V_16M = 1556; % Speed in ft/s (approximately Mach 1.4)
+q_16M = 0.5 * rho * V_16M^2;
+T_W_dash_16M = q_16M * (cd_min ./ (W_S) + k*(n/q_16M)^2 * (W_S));
+
+% Landing Constraint
+S_LDG = 3500; % Landing distance in feet
+h_obst = 50; % Obstacle height in feet
+tau = 0.05; % Approach speed parameter (assumed)
+C_L_max = 1.2; % Maximum lift coefficient
+C_D_LDG = 0.15; % Drag coefficient during landing
+mu = 0.4; % Runway friction coefficient
+T_gr = 0; % Thrust during ground roll (assumed negligible)
+W = 1; % Normalized weight (it cancels out in equations)
+
+% Landing distance equation
 
 %% Plotting
 figure;
 hold on;
-plot(W_S, T_W_takeoff);
-plot(W_S, T_W_climb);
-plot(W_S, T_W_cruise);
-plot(W_S, T_W_turn_08M);
-plot(W_S, T_W_turn_12M);
-plot(W_S, T_W_dash_14M);
+plot(W_S, T_W_takeoff, "LineWidth", 1.5);
+plot(W_S, T_W_climb, "LineWidth", 1.5);
+plot(W_S, T_W_cruise, "LineWidth", 1.5);
+plot(W_S, T_W_turn_09M, "LineWidth", 1.5);
+plot(W_S, T_W_turn_12M, "LineWidth", 1.5);
+plot(W_S, T_W_dash_16M, "LineWidth", 1.5);
+xline(83.3, "LineWidth", 1.5);
 
 xlabel('Wing Loading (W/S) [lbs/ft^2]');
 ylabel('Thrust-to-Weight Ratio (T/W)');
 title('First Design Constraint Diagram');
-legend('Takeoff', 'Climb', 'Cruise', 'Sustained Turn (M=0.8)', 'Sustained Turn (M=1.2)', 'Dash (M=1.4)');
+legend('Takeoff', 'Climb', 'Cruise', 'Sustained Turn (M=0.9)', 'Sustained Turn (M=1.2)', 'Dash (M=1.6)', 'Landing');
 grid on;
 hold off;
+axis([0 100 0 2])
