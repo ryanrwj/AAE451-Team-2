@@ -1,3 +1,6 @@
+close all
+clear
+
 %% Constants
 g = 32.174; % Gravity in ft/s^2
 rho = 0.0023769; % Air density at sea level in slugs/ft^3
@@ -68,20 +71,25 @@ W = 1; % Normalized weight (it cancels out in equations)
 % Landing distance equation
 
 %% Plotting
-figure;
-hold on;
-plot(W_S, T_W_takeoff, "LineWidth", 1.5);
-plot(W_S, T_W_climb, "LineWidth", 1.5);
-plot(W_S, T_W_cruise, "LineWidth", 1.5);
-plot(W_S, T_W_turn_09M, "LineWidth", 1.5);
-plot(W_S, T_W_turn_12M, "LineWidth", 1.5);
-plot(W_S, T_W_dash_16M, "LineWidth", 1.5);
-xline(83.3, "LineWidth", 1.5);
 
-xlabel('Wing Loading (W/S) [lbs/ft^2]');
-ylabel('Thrust-to-Weight Ratio (T/W)');
-title('First Design Constraint Diagram');
-legend('Takeoff', 'Climb', 'Cruise', 'Sustained Turn (M=0.9)', 'Sustained Turn (M=1.2)', 'Dash (M=1.6)', 'Landing');
+color = parula(7);
+
+figure(1);
+hold on;
+plot(W_S, T_W_takeoff, "LineWidth", 2,'Color',color(1,:));
+plot(W_S, T_W_climb, "LineWidth", 2,'Color',color(2,:));
+plot(W_S, T_W_cruise, "LineWidth", 2,'Color',color(3,:));
+plot(W_S, T_W_turn_09M, "LineWidth", 2,'Color',color(4,:));
+plot(W_S, T_W_turn_12M, "LineWidth", 2,'Color',color(5,:));
+plot(W_S, T_W_dash_16M, "LineWidth", 2,'Color',color(6,:));
+xline(83.3, "LineWidth", 2,'Color',color(7,:));
+
+ax = gca;
+ax.FontSize = 16;
+xlabel('Wing Loading (W/S) [lbs/ft^2]','FontSize',18);
+ylabel('Thrust-to-Weight Ratio (T/W)','FontSize',18);
+title('First Design Constraint Diagram','FontSize',20);
+legend('Takeoff', 'Climb', 'Cruise', 'Sustained Turn (M=0.9)', 'Sustained Turn (M=1.2)', 'Dash (M=1.6)', 'Landing','FontSize',14,'location','n');
 grid on;
 hold off;
 axis([0 100 0 2])
